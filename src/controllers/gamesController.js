@@ -12,7 +12,8 @@ export async function getGames (req, res) {
                 SELECT games.*, categories.name as "categoryName" FROM games 
                 JOIN categories
                 ON games."categoryId" = categories.id
-                WHERE games.name ILIKE '${queryName}%'`
+                WHERE games.name ILIKE $1`,
+                [`${queryName}%`]
             );
             res.send(games);
             
