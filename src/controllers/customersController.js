@@ -112,9 +112,44 @@ export async function postCustomers (req, res) {
 
 export async function updateCustomers (req, res) {
 
+    const id = parseInt(req.params.id);
+
+    const updateCustomer = req.body;
+
+    const customerSchema = joi.object({
+        name: joi.string().required(),
+        phone: joi.string().min(10).max(11).pattern(/^[0-9]+$/).required(),
+        cpf: joi.string().length(11).pattern(/^[0-9]+$/).required(),
+        birthday: joi.date().format('YYYY-MM-DD').less('now')
+    });
+    
+    const { error } = customerSchema.validate(updateCustomer);
+    if (error) {
+        res.sendStatus(400);
+        return;
+    }
+
     try {
 
-        res.status(200).send('Test Update Customers');
+        const {rows: customerDB} = await db.query(`
+            SELECT * FROM customers WHERE id <> $1 AND cpf = $2`, 
+            [id, updateCustomer.cpf]
+        );
+
+        if(customerDB.length > 0) {
+            res.sendStatus(409);
+            return;
+        }
+
+        const {name, phone, cpf, birthday} = updateCustomer;
+        await db.query(`
+            UPDATE customers 
+            SET name = $1, phone = $2, cpf = $3, birthday = $4
+            WHERE id = $5`, 
+            [name, phone, cpf, birthday, id]
+        );
+
+        res.sendStatus(200);
 
     } catch (error) {
 
