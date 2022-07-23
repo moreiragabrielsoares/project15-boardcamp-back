@@ -44,9 +44,20 @@ export async function getCustomers (req, res) {
 
 export async function getCustomersById (req, res) {
 
+    const id = parseInt(req.params.id);
+    
     try {
 
-        res.status(200).send('Test Get Customers By Id');
+        const { rows: customer } = await db.query(`SELECT * FROM customers WHERE id = $1`, [id])
+
+        if(customer.length === 0) {
+            res.sendStatus(404);
+            return;
+        }
+
+        customer.forEach(convertDate);
+
+        res.send(customer);
 
     } catch (error) {
 
