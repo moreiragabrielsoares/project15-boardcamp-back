@@ -1,5 +1,7 @@
 import { db } from '../databases/postgreSQL.js';
-import joi from 'joi';
+import baseJoi from 'joi';
+import joiDate from '@joi/date';
+const joi = baseJoi.extend(joiDate);
 
 export async function getCustomers (req, res) {
 
@@ -34,9 +36,36 @@ export async function getCustomersById (req, res) {
 
 export async function postCustomers (req, res) {
 
+    const newCustomer = req.body;
+
+    const customerSchema = joi.object({
+        name: joi.string().required(),
+        phone: joi.string().min(10).max(11).pattern(/^[0-9]+$/).required(),
+        cpf: joi.string().length(11).pattern(/^[0-9]+$/).required(),
+        birthday: joi.date().format('YYYY-MM-DD').less('now')
+    });
+    
+    const { error } = customerSchema.validate(newCustomer);
+    if (error) {
+        res.sendStatus(400);
+        return;
+    }
+    
     try {
 
-        res.status(200).send('Test Post Customers');
+        const {rows: customerDB} = await db.query(`SELECT * FROM customers WHERE cpf = $1`, [newCustomer.cpf]);
+        if(customerDB.length > 0) {
+            res.sendStatus(409);
+            return;
+        }
+
+        const {name, phone, cpf, birthday} = newCustomer;
+        await db.query(`INSERT INTO customers (name, phone, cpf, birthday) 
+            VALUES ($1, $2, $3, $4)`, 
+            [name, phone, cpf, birthday]
+        );
+
+        res.sendStatus(201);
 
     } catch (error) {
 
