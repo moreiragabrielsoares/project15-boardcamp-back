@@ -5,7 +5,9 @@ export async function getCategories (req, res) {
 
     try {
 
-        res.status(200).send('Test Get Categories');
+        const { rows: categories } = await db.query(`SELECT * FROM categories`);
+
+        res.send(categories);
 
     } catch (error) {
 
