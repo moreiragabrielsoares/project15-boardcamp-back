@@ -3,11 +3,35 @@ import baseJoi from 'joi';
 import joiDate from '@joi/date';
 const joi = baseJoi.extend(joiDate);
 
+
+function convertDate (customer) {
+    customer.birthday = customer.birthday.toISOString().substring(0, 10);
+}
+
 export async function getCustomers (req, res) {
 
+    const queryCustomers = req.query.cpf;
+    
     try {
 
-        res.status(200).send('Test Get Customers');
+        if(queryCustomers) {
+            const { rows: customers } = await db.query(`
+                SELECT * FROM customers  
+                WHERE cpf LIKE $1`,
+                [`${queryCustomers}%`]
+            );
+
+            customers.forEach(convertDate);
+
+            res.send(customers);
+
+        } else {
+            const { rows: customers } = await db.query(`SELECT * FROM customers`);
+            
+            customers.forEach(convertDate);
+            
+            res.send(customers);
+        }
 
     } catch (error) {
 
