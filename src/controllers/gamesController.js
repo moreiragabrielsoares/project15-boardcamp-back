@@ -36,7 +36,7 @@ export async function getGames (req, res) {
 
 export async function postGames (req, res) {
 
-    const newGame = req.body
+    const newGame = req.body;
 
     const gameSchema = joi.object({
         name: joi.string().required(),
