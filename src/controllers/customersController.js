@@ -57,7 +57,7 @@ export async function getCustomersById (req, res) {
 
         customer.forEach(convertDate);
 
-        res.send(customer);
+        res.send(customer[0]);
 
     } catch (error) {
 
