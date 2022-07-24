@@ -1,11 +1,67 @@
 import { db } from '../databases/postgreSQL.js';
 import joi from 'joi';
 
+function convertDate (rental) {
+    rental.rentDate = rental.rentDate.toISOString().substring(0, 10);
+}
+
 export async function getRentals (req, res) {
 
+    const queryCustomerId = parseInt(req.query.customerId);
+    const queryGameId = parseInt(req.query.gameId);
+    
     try {
 
-        res.status(200).send('Test Get Rentals');
+        let rentals = [];
+
+        if (queryCustomerId && queryGameId) {
+
+            const { rows: rentalsDB } = await db.query(`
+                SELECT * FROM rentals 
+                WHERE "customerId" = $1 AND "gameId" = $2`,
+                [queryCustomerId, queryGameId]
+            );
+            rentals = rentalsDB;
+
+        } else if (queryCustomerId) {
+
+            const { rows: rentalsDB } = await db.query(`SELECT * FROM rentals WHERE "customerId" = $1`, [queryCustomerId]);
+            rentals = rentalsDB;
+
+        } else if (queryGameId) {
+
+            const { rows: rentalsDB } = await db.query(`SELECT * FROM rentals WHERE "gameId" = $1`, [queryGameId]);
+            rentals = rentalsDB;
+
+        } else {
+
+            const { rows: rentalsDB } = await db.query(`SELECT * FROM rentals`);
+            rentals = rentalsDB;
+
+        }
+
+        rentals.forEach(convertDate);
+
+        for (let i = 0; i < rentals.length; i++) {
+            const { rows: customer } = await db.query(`
+                SELECT id, name FROM customers WHERE id = $1`, 
+                [rentals[i].customerId]
+            );
+            rentals[i]['customer'] = customer[0];
+        }
+
+        for (let i = 0; i < rentals.length; i++) {
+            const { rows: game } = await db.query(`
+                SELECT games.id, games.name, games."categoryId", categories.name as "categoryName"  
+                FROM games JOIN categories 
+                ON games."categoryId" = categories.id 
+                WHERE games.id = $1`, 
+                [rentals[i].gameId]
+            );
+            rentals[i]['game'] = game[0];
+        }
+
+        res.send(rentals);
 
     } catch (error) {
 
