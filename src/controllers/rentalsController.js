@@ -5,6 +5,11 @@ function convertDate (rental) {
     rental.rentDate = rental.rentDate.toISOString().substring(0, 10);
 }
 
+function daysBetween(firstDate, secondDate) {
+    const ONE_DAY = 1000 * 60 * 60 * 24;
+    return Math.round(Math.abs((firstDate - secondDate) / ONE_DAY));
+}
+
 export async function getRentals (req, res) {
 
     const queryCustomerId = parseInt(req.query.customerId);
@@ -141,9 +146,46 @@ export async function postRentals (req, res) {
 
 export async function returnRentals (req, res) {
 
+    const id = parseInt(req.params.id);
+
     try {
 
-        res.status(200).send('Test Return Rentals');
+        const { rows: rental } = await db.query(`SELECT * FROM rentals WHERE id = $1`, [id]);
+
+        if(rental.length === 0) {
+            res.sendStatus(404);
+            return;
+        }
+
+        if(rental[0].returnDate !== null) {
+            res.sendStatus(400);
+            return;
+        }
+
+        const currentDate = new Date();
+        currentDate.setHours(0,0,0,0);
+        const rentDate = new Date(rental[0].rentDate);
+        const rentPeriod = daysBetween(rentDate, currentDate);
+        let delayFee = 0;
+        
+        if (rentPeriod > rental[0].daysRented) {
+            const delayDays = rentPeriod - rental[0].daysRented;
+
+            const { rows: game } = await db.query(`SELECT * FROM games WHERE id = $1`, [rental[0].gameId]);
+
+            delayFee = delayDays * game[0].pricePerDay;
+        }
+
+        const currentDateDB = currentDate.toISOString().substring(0, 10);
+
+        await db.query(`
+            UPDATE rentals 
+            SET "returnDate" = $1, "delayFee" = $2 
+            WHERE id = $3`, 
+            [currentDateDB, delayFee, id]
+        );
+
+        res.sendStatus(200);
 
     } catch (error) {
 
