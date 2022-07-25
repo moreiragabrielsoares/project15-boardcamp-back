@@ -3,6 +3,10 @@ import joi from 'joi';
 
 function convertDate (rental) {
     rental.rentDate = rental.rentDate.toISOString().substring(0, 10);
+
+    if (rental.returnDate !== null) {
+        rental.returnDate = rental.returnDate.toISOString().substring(0, 10);
+    }
 }
 
 function daysBetween(firstDate, secondDate) {
