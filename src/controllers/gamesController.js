@@ -45,7 +45,7 @@ export async function postGames (req, res) {
 
     const gameSchema = joi.object({
         name: joi.string().required(),
-        image: joi.string().required(),
+        image: joi.string().uri().pattern(/(https?:\/\/.*\.(?:png|jpg|jpeg|svg))/).required(),
         stockTotal: joi.number().integer().min(1).required(),
         categoryId: joi.number().integer().min(1).required(),
         pricePerDay: joi.number().integer().min(1).required()
