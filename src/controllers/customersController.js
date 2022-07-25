@@ -11,14 +11,17 @@ function convertDate (customer) {
 export async function getCustomers (req, res) {
 
     const queryCustomers = req.query.cpf;
+    const queryOffset = req.query.offset;
+    const queryLimit = req.query.limit;
     
     try {
 
         if(queryCustomers) {
             const { rows: customers } = await db.query(`
                 SELECT * FROM customers  
-                WHERE cpf LIKE $1`,
-                [`${queryCustomers}%`]
+                WHERE cpf LIKE $1 
+                LIMIT $2 OFFSET $3`,
+                [`${queryCustomers}%`, queryLimit, queryOffset]
             );
 
             customers.forEach(convertDate);
@@ -26,7 +29,11 @@ export async function getCustomers (req, res) {
             res.send(customers);
 
         } else {
-            const { rows: customers } = await db.query(`SELECT * FROM customers`);
+            const { rows: customers } = await db.query(`
+                SELECT * FROM customers 
+                LIMIT $1 OFFSET $2`,
+                [queryLimit, queryOffset]
+            );
             
             customers.forEach(convertDate);
             

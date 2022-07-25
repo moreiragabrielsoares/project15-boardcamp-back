@@ -3,9 +3,12 @@ import joi from 'joi';
 
 export async function getCategories (req, res) {
 
+    const queryOffset = req.query.offset;
+    const queryLimit = req.query.limit;
+
     try {
 
-        const { rows: categories } = await db.query(`SELECT * FROM categories`);
+        const { rows: categories } = await db.query(`SELECT * FROM categories LIMIT $1 OFFSET $2`, [queryLimit, queryOffset]);
 
         res.send(categories);
 

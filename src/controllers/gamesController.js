@@ -4,6 +4,8 @@ import joi from 'joi';
 export async function getGames (req, res) {
 
     const queryName = req.query.name;
+    const queryOffset = req.query.offset;
+    const queryLimit = req.query.limit;
     
     try {
 
@@ -12,8 +14,9 @@ export async function getGames (req, res) {
                 SELECT games.*, categories.name as "categoryName" FROM games 
                 JOIN categories
                 ON games."categoryId" = categories.id
-                WHERE games.name ILIKE $1`,
-                [`${queryName}%`]
+                WHERE games.name ILIKE $1 
+                LIMIT $2 OFFSET $3`,
+                [`${queryName}%`, queryLimit, queryOffset]
             );
             res.send(games);
             
@@ -21,7 +24,9 @@ export async function getGames (req, res) {
             const { rows: games } = await db.query(`
                 SELECT games.*, categories.name as "categoryName" FROM games 
                 JOIN categories
-                ON games."categoryId" = categories.id`
+                ON games."categoryId" = categories.id 
+                LIMIT $1 OFFSET $2`,
+                [queryLimit, queryOffset]
             );
             res.send(games); 
         }

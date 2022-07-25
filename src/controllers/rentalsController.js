@@ -14,6 +14,8 @@ export async function getRentals (req, res) {
 
     const queryCustomerId = parseInt(req.query.customerId);
     const queryGameId = parseInt(req.query.gameId);
+    const queryOffset = req.query.offset;
+    const queryLimit = req.query.limit;
     
     try {
 
@@ -23,24 +25,39 @@ export async function getRentals (req, res) {
 
             const { rows: rentalsDB } = await db.query(`
                 SELECT * FROM rentals 
-                WHERE "customerId" = $1 AND "gameId" = $2`,
-                [queryCustomerId, queryGameId]
+                WHERE "customerId" = $1 AND "gameId" = $2 
+                LIMIT $3 OFFSET $4`,
+                [queryCustomerId, queryGameId, queryLimit, queryOffset]
             );
             rentals = rentalsDB;
 
         } else if (queryCustomerId) {
 
-            const { rows: rentalsDB } = await db.query(`SELECT * FROM rentals WHERE "customerId" = $1`, [queryCustomerId]);
+            const { rows: rentalsDB } = await db.query(`
+                SELECT * FROM rentals 
+                WHERE "customerId" = $1 
+                LIMIT $2 OFFSET $3`, 
+                [queryCustomerId, queryLimit, queryOffset]
+            );
             rentals = rentalsDB;
 
         } else if (queryGameId) {
 
-            const { rows: rentalsDB } = await db.query(`SELECT * FROM rentals WHERE "gameId" = $1`, [queryGameId]);
+            const { rows: rentalsDB } = await db.query(`
+                SELECT * FROM rentals 
+                WHERE "gameId" = $1 
+                LIMIT $2 OFFSET $3`, 
+                [queryGameId, queryLimit, queryOffset]
+            );
             rentals = rentalsDB;
 
         } else {
 
-            const { rows: rentalsDB } = await db.query(`SELECT * FROM rentals`);
+            const { rows: rentalsDB } = await db.query(`
+                SELECT * FROM rentals 
+                LIMIT $1 OFFSET $2`, 
+                [queryLimit, queryOffset]
+            );
             rentals = rentalsDB;
 
         }
